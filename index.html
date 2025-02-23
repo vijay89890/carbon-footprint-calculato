@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Carbon Footprint Calculator</title>
+  <!-- Bootstrap CSS via CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #2c2f33;
+      color: #ffffff;
+      padding-top: 40px;
+    }
+    .container {
+      max-width: 600px;
+    }
+    .card {
+      background-color: #23272a;
+      border: none;
+      color: #ffffff;
+    }
+    .form-control {
+      background-color: #40444b;
+      color: #ffffff;
+      border: none;
+    }
+    .form-control:focus {
+      box-shadow: none;
+      border-color: #7289da;
+    }
+    .btn-primary {
+      background-color: #7289da;
+      border-color: #7289da;
+    }
+    #results {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mb-4 text-center">Carbon Footprint Calculator</h1>
+    <div class="card p-4">
+      <form id="carbonForm">
+        <div class="mb-3">
+          <label for="kilometers" class="form-label">Kilometers Driven per Day</label>
+          <input type="number" class="form-control" id="kilometers" name="kilometers" placeholder="Enter kilometers" required>
+        </div>
+        <div class="mb-3">
+          <label for="kwh" class="form-label">Electricity Usage (kWh per Day)</label>
+          <input type="number" class="form-control" id="kwh" name="kwh" placeholder="Enter kWh usage" required>
+        </div>
+        <div class="mb-3">
+          <label for="meals" class="form-label">Meat-based Meals per Day</label>
+          <input type="number" class="form-control" id="meals" name="meals" placeholder="Enter number of meals" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Calculate</button>
+      </form>
+    </div>
+    <div id="results" class="mt-4"></div>
+  </div>
+  
+  <script>
+    // Your API Gateway endpoint for the /calculate POST method
+    const apiUrl = 'https://m8karijr7l.execute-api.ap-south-1.amazonaws.com/dev/calculate';
+  
+    document.getElementById('carbonForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const kilometers = document.getElementById('kilometers').value;
+      const kwh = document.getElementById('kwh').value;
+      const meals = document.getElementById('meals').value;
+      
+      try {
+        // Prepare the payload as expected by your Lambda (double-nested body)
+        const payload = {
+          body: JSON.stringify({
+            kilometers: kilometers,
+            kwh: kwh,
+            meals: meals
+          })
+        };
+  
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+  
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+  
+        const data = await response.json();
+  
+        document.getElementById('results').innerHTML = `
+          <div class="card p-3">
+            <h2>Results</h2>
+            <p><strong>Current Emissions:</strong> ${data.current_emissions.toFixed(2)} kg CO₂</p>
+            <p><strong>Predicted Emissions:</strong> ${data.predicted_emissions.toFixed(2)} kg CO₂</p>
+            <p><strong>Recommendation:</strong> ${data.recommendation}</p>
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('results').innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+      }
+    });
+  </script>
+  
+  <!-- Bootstrap JS Bundle (optional) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
